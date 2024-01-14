@@ -1,3 +1,4 @@
+
 from qiskit import *
 import random
 import tkinter as tk
@@ -206,15 +207,19 @@ class board(object):
             result = sq.measure()
 
         if result == "0":
-            self.buttons[x][y]['text'] = sq.value
-            self.h_buttons[x][y]['text'] = sq.h_value
+            if ver == 1:
+                self.buttons[x][y]['text'] = sq.value
+                self.h_buttons[x][y]['text'] = sq.h_value
             if sq.state + sq.h_state < 1:
                 self.remaining_squares -= 1
                 if self.remaining_squares == 0:
                     self.win = True
                     if ver == 1:
                         print("\nYou won!")
-                        quit()
+                        for k in range(self.height):
+                            for l in range(self.width):
+                                self.buttons[k][l]["state"] = tk.DISABLED
+                                self.h_buttons[k][l]["state"] = tk.DISABLED
             else:
                 self.remaining_mines -= 1
 
@@ -225,7 +230,7 @@ class board(object):
                     if not (k == x and l == y):
                         self.board[k][l].value -= sq.state
                         self.board[k][l].h_value -= sq.h_state
-                        if self.board[k][l].clicked:
+                        if self.board[k][l].clicked and ver == 1:
                             self.buttons[k][l]['text'] = self.board[k][l].value
                             self.h_buttons[k][l]['text'] = self.board[k][l].h_value
                         if sq.value == 0:
@@ -238,12 +243,15 @@ class board(object):
                             self.leftClick(k, l, True, ver)
         else:
             sq.exploded = True
-            self.buttons[x][y]['text'] = "X"
-            self.h_buttons[x][y]['text'] = "X"
             self.gameOver = True
             if ver == 1:
-                print("\nYou hit a mine, Game Over!")
-                quit()
+                self.buttons[x][y]['text'] = "X"
+                self.h_buttons[x][y]['text'] = "X"
+                print("\nYou hit a mine, Game Over!\n")
+                for k in range(self.height):
+                    for l in range(self.width):
+                        self.buttons[k][l]["state"] = tk.DISABLED
+                        self.h_buttons[k][l]["state"] = tk.DISABLED
 
         return True
 
@@ -269,18 +277,18 @@ def play(width, height, num1s, num_plus, num_minus, expert_mode, ver, custom_boa
     win = False
     brd = board(width, height, num1s, num_plus, num_minus, expert_mode, custom_board)
     brd.setValues()
-    window = tk.Tk()
-    brd.buttons = [[0 for i in range(width)] for j in range(height)]
-    brd.h_buttons = [[0 for i in range(width)] for j in range(height)]
-    for x in range(height):
-        for y in range(width):
-            brd.buttons[x][y] = tk.Button(width=4, height=2, command=partial(brd.leftClick, x, y, False, ver))
-            brd.h_buttons[x][y] = tk.Button(width=4, height=2, command=partial(brd.leftClick, x, y, True, ver))
-            label = tk.Label(window, width=8, height=2)
-            label.grid(row=y, column=width)
-            brd.buttons[x][y].grid(row=x, column=y)
-            brd.h_buttons[x][y].grid(row=x, column=width + y + 1)
     if ver == 1:
+        window = tk.Tk()
+        brd.buttons = [[0 for i in range(width)] for j in range(height)]
+        brd.h_buttons = [[0 for i in range(width)] for j in range(height)]
+        for x in range(height):
+            for y in range(width):
+                brd.buttons[x][y] = tk.Button(width=4, height=2, command=partial(brd.leftClick, x, y, False, ver))
+                brd.h_buttons[x][y] = tk.Button(width=4, height=2, command=partial(brd.leftClick, x, y, True, ver))
+                label = tk.Label(window, width=8, height=2)
+                label.grid(row=y, column=width)
+                brd.buttons[x][y].grid(row=x, column=y)
+                brd.h_buttons[x][y].grid(row=x, column=width + y + 1)
         window.mainloop()
     else:
         while not brd.gameOver:
@@ -291,22 +299,25 @@ def play(width, height, num1s, num_plus, num_minus, expert_mode, ver, custom_boa
             x = int(input("row: "))
             y = int(input("column: "))
             if click == 0:
-                brd.leftClick(x, y, (boardNumber == 1), ver)
+                brd.leftClick(x, y, boardNumber, ver)
             else:
-                brd.rightClick(x, y, h=(boardNumber == 1))
+                brd.rightClick(x, y, boardNumber == 1)
             if brd.win and not brd.gameOver:
                 brd.gameOver = True
                 win = True
 
         print(brd)
         if win:
-            print("You won!")
+            print("\nYou won!\n")
         else:
-            print("You hit a mine, Game Over!")
+            print("\nYou hit a mine, Game Over!\n")
+        t = int(input("play again? (0/1): "))
+        if t == 1:
+            main()
 
 
 def main():
-    ver = int(input("Do you want to play to console version (0) or the GUI version (1) of the game?: "))
+    ver = int(input("\nDo you want to play to console version (0) or the GUI version (1) of the game?: "))
     level = int(input("Which level do you want to play? (levels 1-4, type 0 to set up custom board): "))
     expert_mode = int(input("Do you want to play in expert mode? 1/0 (more info in readme): "))
     if level == 0:
